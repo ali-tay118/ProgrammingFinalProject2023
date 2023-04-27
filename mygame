@@ -1,0 +1,55 @@
+import random
+
+def start_game():
+	cont = input("Welcome to Ali's very exciting text based game.(press enter to continue through tutorial)")
+	if cont == "":
+		cont2 = input("You are lost in a forest and you need to find your way out.")
+	if cont2 == "":
+		cont3 = input("You have a compass and a map to help you navigate.")
+	if cont3 == "":
+		cont4 = input("You can move in four direcions")
+
+#start player location
+	player_location = (0, 0)
+
+#start game loop
+	while True:
+		print(f"You are currently at location {player_location}")
+		user_input = input("Where do you want to go?\n")
+
+#handle user input	
+		if user_input.lower() == "north":
+			player_location = (player_location[0], player_location[1]+1)
+		elif user_input.lower() == "south":
+			player_location = (player_location[0], player_location[1]-1)
+		elif user_input.lower() == "east":
+			player_location = (player_location[0]+1, player_location[1])
+		elif user_input.lower() == "west":
+			player_location = (player_location[0]-1, player_location[1])
+		else:
+			print("That is not a valid direction. Please choose a valid direction.")
+
+#generate random event
+		event_chance = random.randint(1,10)
+		if event_chance == 1:
+			print("You found a treasure.")
+		elif event_chance == 2:
+			print("You encountered a monster.")
+		elif event_chance == 3:
+			print("You stumbled upon a trap.")
+		elif event_chance == 4:
+			print("You found a secret passage.")
+		elif event_chance == 5:
+			print("You stepped in a hole.")
+		elif event_chance == 6:
+			print("You found an interesting stick.")
+		else:
+			print("Nothing of significance occurred.")
+
+#check if player has reached the exit
+		if player_location == (4, 7):
+			print("congrats you made it out of the forest.")
+			break
+
+if __name__ == "__main__":
+	start_game()
