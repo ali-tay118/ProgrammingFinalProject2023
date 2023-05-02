@@ -1,13 +1,5 @@
 import pickle
 
-class Player: 
-	def __init__(self):
-		self.location = 'start'
-		self.inventory = []
-
-	def __str__(self):
-		return f"Location:{self.location}\nInventory: {self.inventory}"
-
 locations = {
 	'start': {
 		'description': 'You are in the middle of a dense forest. You have no idea how you got here, or where you are supposed to go. You are completely lost.',
@@ -26,6 +18,36 @@ locations = {
 	}
 }
 
+def main():
+	print("Welcome to Ali's very exciting text-based Lost in the Forest game.")
+	print("Please select an option:")
+	print("""
+			MENU
+			1. Start a new game
+			2. Load a saved game
+			3. Exit""")
+
+	choice = input("ENTER YOUR CHOICE: ")
+
+	if choice == '1':
+		start_game()
+	elif choice == '2':
+		load_game()
+	elif choice == '3':
+		print('Goodbye.')
+
+def start_game():
+	current_location = 'start'
+	print(locations[current_location]['description'])
+	response = input("(north, south, east, west)> ").lower()
+
+	if response == 'north':
+		current_location = locations[current_location]['exits']['north']
+		print(locations[current_location]['description'])
+	else:
+		print("Invalid input, please try again.")
+		start_game()
+
 def save_game(player):
 	with open('savegame.pkl', 'wb') as f:
 		pickle.dump(player,f)
@@ -34,46 +56,18 @@ def save_game(player):
 def load_game():
 	try:
 		with open('savegame.pkl','rb') as f:
-			player = pickle.load(f)
-			print("Game loaded.")
-			return player
-	except:
-		print('No saved game found.')
-		return None
-
-def get_input():
-	return input('> ').lower().split()
-
-def play_game():
-	player = load_game()
-	if not player:
-		player = Player()
-	print('Lost in the Forest\n')
-	while True:
-		location = locations[player.location]
-		print(location['description'])
-		if location['objects']:
-			for obj in location['objects']:
-				print(location['objects'][obj])
-		if location['exits']:
-			print("Exits:",",".join(location['exits'].keys()))
-		action = get_input()
-		if action[0] == 'exit':
-			save_game(player)
-			break
-		elif action[0] == 'inventory':
-			print(player.inventory)
-		elif action[0] == 'take':
-			obj = action[1]
-			if obj == 'key' and player.location == 'waterfall':
-				player.location = 'treasure'
-				print('You unlock the door and step through it.')
-			else:
-				print(f"You cannot use the {obj} here.")
-		elif action[0] in location['exits']:
-			player.location = location['exits'][action[0]]
+			saved_game = pickle.load(f)
+		current_location = saved_game['current_location']
+		print(locations[current_location]['description'])
+		reponse = input("> ")
+		if response == 'north':
+			current_location = locations[current_location]['exits']['north']
+			print(locations[current_location]['description'])
 		else:
-			print('Invalid input. Type "exit" to quit the game.')
-			continue
+			print("Invalid input, please try again.")
+			load_game()
+	except FileNotFoundError:
+		print('No saved game found.')
+		main()
 
-play_game()
+main()
