@@ -1,55 +1,79 @@
-import random
+import pickle
 
-def start_game():
-	cont = input("Welcome to Ali's very exciting text based game.(press enter to continue through tutorial)")
-	if cont == "":
-		cont2 = input("You are lost in a forest and you need to find your way out.")
-	if cont2 == "":
-		cont3 = input("You have a compass and a map to help you navigate.")
-	if cont3 == "":
-		cont4 = input("You can move in four direcions")
+class Player: 
+	def __init__(self):
+		self.location = 'start'
+		self.inventory = []
 
-#start player location
-	player_location = (0, 0)
+	def __str__(self):
+		return f"Location:{self.location}\nInventory: {self.inventory}"
 
-#start game loop
+locations = {
+	'start': {
+		'description': 'You are in the middle of a dense forest. You have no idea how you got here, or where you are supposed to go. You are completely lost.',
+		'exits': {'north': 'cave'},
+		'objects': {'key': 'A shiny ley lies on the ground.'}
+	},
+	'cave': {
+		'description': 'You are in a dark, damp cave. You can barely see anything, but you can hear the sound of running water nearby.',
+		'exits': {'south': 'start', 'west': 'waterfall'},
+		'objects': {'lantern': 'A lantern is hanging on the wall.'}
+	},
+	'waterfall': {
+		'description': 'You are standing next to a large waterfall. The water is crashing down in front of you, making it impossible to see what is beyond.',
+		'exits': {'east': 'cave'},
+		'objects': {'door': 'There is a door behind the waterfall, but it seems to be locked.'}
+	}
+}
+
+def save_game(player):
+	with open('savegame.pkl', 'wb') as f:
+		pickle.dump(player,f)
+	print("Game saved.")
+
+def load_game():
+	try:
+		with open('savegame.pkl','rb') as f:
+			player = pickle.load(f)
+			print("Game loaded.")
+			return player
+	except:
+		print('No saved game found.')
+		return None
+
+def get_input():
+	return input('> ').lower().split()
+
+def play_game():
+	player = load_game()
+	if not player:
+		player = Player()
+	print('Lost in the Forest\n')
 	while True:
-		print(f"You are currently at location {player_location}")
-		user_input = input("Where do you want to go?\n")
-
-#handle user input	
-		if user_input.lower() == "north":
-			player_location = (player_location[0], player_location[1]+1)
-		elif user_input.lower() == "south":
-			player_location = (player_location[0], player_location[1]-1)
-		elif user_input.lower() == "east":
-			player_location = (player_location[0]+1, player_location[1])
-		elif user_input.lower() == "west":
-			player_location = (player_location[0]-1, player_location[1])
-		else:
-			print("That is not a valid direction. Please choose a valid direction.")
-
-#generate random event
-		event_chance = random.randint(1,10)
-		if event_chance == 1:
-			print("You found a treasure.")
-		elif event_chance == 2:
-			print("You encountered a monster.")
-		elif event_chance == 3:
-			print("You stumbled upon a trap.")
-		elif event_chance == 4:
-			print("You found a secret passage.")
-		elif event_chance == 5:
-			print("You stepped in a hole.")
-		elif event_chance == 6:
-			print("You found an interesting stick.")
-		else:
-			print("Nothing of significance occurred.")
-
-#check if player has reached the exit
-		if player_location == (4, 7):
-			print("congrats you made it out of the forest.")
+		location = locations[player.location]
+		print(location['description'])
+		if location['objects']:
+			for obj in location['objects']:
+				print(location['objects'][obj])
+		if location['exits']:
+			print("Exits:",",".join(location['exits'].keys()))
+		action = get_input()
+		if action[0] == 'exit':
+			save_game(player)
 			break
+		elif action[0] == 'inventory':
+			print(player.inventory)
+		elif action[0] == 'take':
+			obj = action[1]
+			if obj == 'key' and player.location == 'waterfall':
+				player.location = 'treasure'
+				print('You unlock the door and step through it.')
+			else:
+				print(f"You cannot use the {obj} here.")
+		elif action[0] in location['exits']:
+			player.location = location['exits'][action[0]]
+		else:
+			print('Invalid input. Type "exit" to quit the game.')
+			continue
 
-if __name__ == "__main__":
-	start_game()
+play_game()
