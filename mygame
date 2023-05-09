@@ -1,79 +1,132 @@
 import pickle
 
-class Player: 
-	def __init__(self):
-		self.location = 'start'
-		self.inventory = []
+class Item:
+    def __init__(self, name, description):
+        self.name = name
+        self.description = description
 
-	def __str__(self):
-		return f"Location:{self.location}\nInventory: {self.inventory}"
+class Location:
+	def __init__(self, description, exits, objects):
+		self.description = description
+		self.exits = exits
+		self.objects = objects
 
 locations = {
-	'start': {
-		'description': 'You are in the middle of a dense forest. You have no idea how you got here, or where you are supposed to go. You are completely lost.',
-		'exits': {'north': 'cave'},
-		'objects': {'key': 'A shiny ley lies on the ground.'}
-	},
-	'cave': {
-		'description': 'You are in a dark, damp cave. You can barely see anything, but you can hear the sound of running water nearby.',
-		'exits': {'south': 'start', 'west': 'waterfall'},
-		'objects': {'lantern': 'A lantern is hanging on the wall.'}
-	},
-	'waterfall': {
-		'description': 'You are standing next to a large waterfall. The water is crashing down in front of you, making it impossible to see what is beyond.',
-		'exits': {'east': 'cave'},
-		'objects': {'door': 'There is a door behind the waterfall, but it seems to be locked.'}
-	}
+	'start': Location(
+		'You are in the middle of a dense forest. You have no idea how you got here, or where you are supposed to go. You are completely lost.',
+		{'north': 'cave'},
+		{'key': Item('key', 'A shiny key lies on the ground.')}
+	),
+	'cave': Location(
+		'You are in a dark, damp cave. You can barely see anything, but you can hear the sound of running water nearby.',
+		{'south': 'start', 'west': 'waterfall'},
+		{'lantern': Item('lantern', 'A lantern is hanging on the wall.')}
+	),
+	'waterfall': Location(
+		'You are standing next to a large waterfall. The water is crashing down in front of you, making it impossible to see what is beyond.',
+		{'east': 'cave'},
+		{'door': Item('door', 'There is a door behind the waterfall, but it seems to be locked.')}
+	)
 }
 
-def save_game(player):
-	with open('savegame.pkl', 'wb') as f:
-		pickle.dump(player,f)
-	print("Game saved.")
+end_goal = {
+	'waterfall': {'key': True}
+}
+
+class Item:
+	def __init__(self, name, description):
+		self.name = name
+		self.description = description
+
+class Inventory:
+	def __init__(self):
+		self.items = []
+
+	def add_item(self, item):
+		self.items.append(item)
+
+	def remove_item(self, item):
+		self.items.remove(item)
+
+	def __str__(self):
+		if len(self.items) == 0:
+			return 'Your inventory is empty.'
+		else:
+			return 'Inventory: ' + ', '.join([item.name for item in self.items])
+
+def start_game():
+	current_location = 'start'
+	inventory = Inventory()
+	print(locations[current_location].description)
+	while True:
+		response = input("(north, south, east, west, inventory, save)> ").lower()
+		if response in locations[current_location].exits:
+			current_location = locations[current_location].exits[response]
+			print(locations[current_location].description)
+			if current_location == 'waterfall' and 'key' in [item.name for item in inventory.items]:
+				print('You use the key to unlock the door behind the waterfall. You step through the door and find yourself outside of the forest. Congratulations! You have won the game.')
+				main()
+			elif current_location == 'waterfall' and 'key' in locations[current_location].objects:
+				print(locations[current_location].objects['key'].description)
+				inventory.add_item(locations[current_location].objects['key'])
+				del locations[current_location].objects['key']
+		elif response == 'inventory':
+			print(inventory)
+		elif response == 'save':
+			save_game(current_location, inventory)
+		elif response == 'exit':
+			main()
+		else:
+			print("Invalid input, please try again.")
+
+def main():
+	print("Welcome to Ali's very exciting text-based Lost in the Forest game.")
+	while True:
+		print("MENU\n1. Start a new game\n2. Load a saved game\n3. Exit")
+		choice = input("ENTER YOUR CHOICE: ")
+
+		if choice == '1':
+			start_game()
+		elif choice == '2':
+			load_game()
+		elif choice == '3':
+			print('Goodbye.')
+			break
+		else:
+			print("Invalid input, please try again.")
+
+
+def save_game(current_location, inventory):
+    name = input("Enter a name for your saved game: ")
+    data = {'current_location': current_location, 'inventory': inventory}
+    with open(f'saved_game_{name}.pickle', 'wb') as f:
+        pickle.dump(data, f)
+    print("Game saved.")
+	
+
 
 def load_game():
-	try:
-		with open('savegame.pkl','rb') as f:
-			player = pickle.load(f)
-			print("Game loaded.")
-			return player
-	except:
-		print('No saved game found.')
-		return None
+    try:
+        with open('saved_games.pickle', 'rb') as f:
+            saved_games = pickle.load(f)
+        
+        if saved_games:
+            print("Saved games:")
+            for i, game in enumerate(saved_games):
+                print(f"{i+1}. {game['name']}")
+            
+            while True:
+                choice = input("Enter the number of the saved game you want to load: ")
+                try:
+                    choice = int(choice)
+                    if 1 <= choice <= len(saved_games):
+                        return saved_games[choice-1]['data']
+                except ValueError:
+                    pass
+                print("Invalid input, please try again.")
+        else:
+            print("No saved games found.")
+    except FileNotFoundError:
+        print("No saved games found.")
 
-def get_input():
-	return input('> ').lower().split()
-
-def play_game():
-	player = load_game()
-	if not player:
-		player = Player()
-	print('Lost in the Forest\n')
-	while True:
-		location = locations[player.location]
-		print(location['description'])
-		if location['objects']:
-			for obj in location['objects']:
-				print(location['objects'][obj])
-		if location['exits']:
-			print("Exits:",",".join(location['exits'].keys()))
-		action = get_input()
-		if action[0] == 'exit':
-			save_game(player)
-			break
-		elif action[0] == 'inventory':
-			print(player.inventory)
-		elif action[0] == 'take':
-			obj = action[1]
-			if obj == 'key' and player.location == 'waterfall':
-				player.location = 'treasure'
-				print('You unlock the door and step through it.')
-			else:
-				print(f"You cannot use the {obj} here.")
-		elif action[0] in location['exits']:
-			player.location = location['exits'][action[0]]
-		else:
-			print('Invalid input. Type "exit" to quit the game.')
-			continue
-
-play_game()
+main()
